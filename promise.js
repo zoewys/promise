@@ -1,36 +1,56 @@
-function Promise2(fn){
-    var self = this;
+const MyPromise = function(fn) {
+    var _this = this;
 
-    // 三种状态，pending, err, success
-    this.status = 0
+    this.thenFn = [];
 
-    this.callback = null;
-
-    function resolved (value){
-        self.callback && self.callback(value)
+    this.resolve = function(value) {
+        // console.log('resolve fn')
+        // let fns = _this.thenFn.reverse()
+        _this.thenFn.forEach( fn => {
+            fn && (value = fn(value))
+        })
     }
 
-    fn(resolved)
+    this.reject = function() {
+        // console.log('reject fn')
+    }
+
+    fn(this.resolve, this.reject)
 }
 
-Promise2.prototype.then = function(cb){
-    this.callback = cb;
-    return this
+MyPromise.prototype.then = function(fn) {
+    this.thenFn.push(fn)
+    return this;
 }
 
-const p = new Promise(function(resolve, reject){
+const p = new MyPromise((resolve, reject) => {
+    console.log('promise function')
     setTimeout(function(){
-        console.log('get data')
-        reject(1)
-    },10)
+        // reject(1)
+        resolve(100)
+    },100)
 })
 
-const a = p.then(function(value){
-    console.log(value)
-    return value + 1
-})
-// a.then(function(value){
-//     console.log(value)
+setTimeout(() => {
+    p.then(v1 => {
+        console.log(v1)
+        // setTimeout(() => {
+        //     return 'then 1'
+        // })
+        console.log(this)
+        return 100 * 2
+    })
+},1000)
+// const p1 = p.then(v1 => {
+//     console.log(v1)
+//     // setTimeout(() => {
+//     //     return 'then 1'
+//     // })
+//     return 100 * 2
 // })
 
-console.log('a',a)
+// console.log('p1', p1)
+// const p2 = p.then(v2 => {
+//     console.log(v2)
+// })
+
