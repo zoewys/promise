@@ -1,56 +1,81 @@
-const MyPromise = function(fn) {
-    var _this = this;
+const log = console.log
 
-    this.thenFn = [];
+function MyPromise(fn){
+    var _this = this
 
-    this.resolve = function(value) {
-        // console.log('resolve fn')
-        // let fns = _this.thenFn.reverse()
-        _this.thenFn.forEach( fn => {
-            fn && (value = fn(value))
-        })
+    // 状态：pending fulfilled rejected
+    this.status = 'pending'
+
+    this.value = null
+    this.reason = null
+
+    this.fulfilledCallback = null
+    this.rejectedCallback = null
+
+    function resolve(value){
+        if(isFinish()){
+            return null
+        }
+
+        _this.status = 'fulfilled'
+        _this.value = value
+
+        let cb = _this.fulfilledCallback
+        if(typeof(cb) == 'function') {
+            cb(value)
+        }
     }
 
-    this.reject = function() {
-        // console.log('reject fn')
+    function reject(value){
+        if(isFinish()){
+            return null
+        }
+
+        _this.status = 'rejected'
+        _this.reason = value
+
+        let cb = _this.rejectedCallback
+        if(typeof(cb) == 'function'){
+            cb(value)
+        }
     }
 
-    fn(this.resolve, this.reject)
+    function isFinish(){
+        return _this.status != 'pending'
+    }
+
+    fn && fn(resolve, reject)
 }
 
-MyPromise.prototype.then = function(fn) {
-    this.thenFn.push(fn)
-    return this;
+MyPromise.prototype.then = function(onFulfilled, onReject){
+    if(this.status == 'fulfilled'){
+        onFulfilled(this.value)
+        return null
+    }
+
+    if(this.status == 'rejected'){
+        onReject(this.reason)
+        return null
+    }
+
+    this.fulfilledCallback = onFulfilled
+    this.rejectedCallback = onReject
 }
 
+// 测试代码
 const p = new MyPromise((resolve, reject) => {
-    console.log('promise function')
-    setTimeout(function(){
-        // reject(1)
+    log('init')
+    setTimeout(() => {
         resolve(100)
-    },100)
+        // reject(200)
+    }, 100)
 })
 
 setTimeout(() => {
-    p.then(v1 => {
-        console.log(v1)
-        // setTimeout(() => {
-        //     return 'then 1'
-        // })
-        console.log(this)
-        return 100 * 2
+    p.then((value) => {
+        log('resolve', value)
+        // log(p.status)
+    }, (value2) => {
+        log('reject', value2)
     })
-},1000)
-// const p1 = p.then(v1 => {
-//     console.log(v1)
-//     // setTimeout(() => {
-//     //     return 'then 1'
-//     // })
-//     return 100 * 2
-// })
-
-// console.log('p1', p1)
-// const p2 = p.then(v2 => {
-//     console.log(v2)
-// })
-
+}, 200)
